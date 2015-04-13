@@ -4,6 +4,7 @@ import sys
 import subprocess
 import os
 import json
+import urllib2
 from os import path
 from datetime import datetime
 
@@ -14,7 +15,10 @@ settings = {
     'repos': {},
     'localbasepath': path.join(HOME_DIR, 'backup'),
     'servers': [
-        #('user@server.example.com', 'serverbasepath')
+        # ('user@server.example.com', 'serverbasepath'),
+    ],
+    'github_users': [
+        # 'username',
     ],
     'dateformat': '%Y-%m-%d/%H-%M-%S',
 }
@@ -104,24 +108,49 @@ def makelocaldir():
         os.makedirs(settings['localbasepath'])
 
 
-def updaterepolist():
-    # for every server do a 'find' to search git repos
+def get_repo_list_ssh(serveraddress, serverbasepath):
     newrepos = {}
+
+    dirlist = subprocess.check_output(['ssh', serveraddress, 'find', serverbasepath, '-type', 'd'])
+    for line in dirlist.splitlines():
+        if line.endswith('/objects'):
+            # got a repo, calculate url, localpath, check if exists
+            serverpath = line[:-len('/objects')]
+            url = '{}:{}'.format(serveraddress, serverpath)
+            localpath = os.path.join(settings['localbasepath'], serveraddress, serverpath[len(serverbasepath)+1:])
+            if not url in settings['repos']:
+                newrepos[url] = localpath
+
+    return newrepos
+
+def get_repo_list_github(username):
+    newrepos = {}
+
+    response = urllib2.urlopen('https://api.github.com/users/{}/repos'.format(username))
+    data = response.read()
+    repos = json.loads(data)
+    for repo in repos:
+        localpath = os.path.join(settings['localbasepath'], 'github.com', username, repo['name'])
+        newrepos[repo['git_url']] = localpath
+
+    return newrepos
+
+
+def updaterepolist():
+    newrepos = {}
+
+    # for every server do a 'find' to search git repos
     for serveraddress, serverbasepath in settings['servers']:
-        dirlist = subprocess.check_output(['ssh', serveraddress, 'find', serverbasepath, '-type', 'd'])
-        for line in dirlist.splitlines():
-            if line.endswith('/objects'):
-                # got a repo, calculate url, localpath, check if exists
-                serverpath = line[:-len('/objects')]
-                url = '{}:{}'.format(serveraddress, serverpath)
-                localpath = os.path.join(settings['localbasepath'], serveraddress, serverpath[len(serverbasepath)+1:])
-                if not url in settings['repos']:
-                    newrepos[url] = localpath
+        newrepos.update(get_repo_list_ssh(serveraddress, serverbasepath))
+
+    # for every github user query the api to find all the user's repos
+    for username in settings['github_users']:
+        newrepos.update(get_repo_list_github(username))
 
     # ask whether to really add found repos
     print('New repos:')
     for k, v in newrepos.iteritems():
-        print(k)
+        print('Repo {} backed up in {}'.format(k,v))
     b = query_yes_no('Add and sync new repos?')
 
     if b:
@@ -157,6 +186,12 @@ def dobackup():
             ))
 
 
+def add_github_user():
+    settings['github_users'].append(sys.argv[2])
+    settings['github_users'] = list(set(settings['github_users']))
+    savesettings()
+
+
 def main():
     loadsettings()
     makelocaldir()
@@ -165,6 +200,7 @@ def main():
         print('Available commands:')
         print('  updaterepolist')
         print('  addrepo remote-url localpath')
+        print('  add_github_user username')
         print('  dobackup')
         print('  setconfig key value')
     elif sys.argv[1] == 'addrepo':
@@ -172,6 +208,8 @@ def main():
         savesettings()
     elif sys.argv[1] == 'updaterepolist':
         updaterepolist()
+    elif sys.argv[1] == 'add_github_user':
+        add_github_user()
     elif sys.argv[1] == 'dobackup':
         dobackup()
     elif sys.argv[1] == 'setconfig':
