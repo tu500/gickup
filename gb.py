@@ -100,7 +100,7 @@ def run_updaterepolist(args, settings):
     if b:
         print('Saving new repos.')
         for k, v in newrepos.items():
-            addrepo(k, v)
+            init_repo(k, v)
             settings['repos'][k] = v
         helpers.savesettings(args.configfile, settings)
     else:
@@ -122,7 +122,7 @@ def run_dobackup(args, settings):
             ))
 
 
-def addrepo(url, localpath):
+def init_repo(url, localpath):
     assert os.path.isabs(localpath)
     repo = helpers.Repo(localpath)
     repo.init(bare=True)
@@ -136,7 +136,7 @@ def run_addrepo(args, settings):
     if not os.path.isabs(bpath):
         bpath = os.path.join(settings['localbasepath'], bpath)
 
-    addrepo(args.repourl, bpath)
+    init_repo(args.repourl, bpath)
 
     settings['repos'][args.repourl] = bpath
     helpers.savesettings(args.configfile, settings)
