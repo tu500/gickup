@@ -118,7 +118,8 @@ def run_updaterepolist(args, settings):
 
 def run_dobackup(args, settings):
     if args.localpath is not None:
-        repos = [helpers.Repo(args.localpath)]
+        p = os.path.abspath(os.path.expanduser(args.localpath))
+        repos = [helpers.Repo(p)]
     else:
         repos = [helpers.Repo(v) for v in settings['repos'].values()]
 
