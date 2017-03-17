@@ -133,6 +133,7 @@ def run_dobackup(args, settings):
 
 def init_repo(url, localpath):
     assert os.path.isabs(localpath)
+    assert not os.path.exists(localpath) or not os.listdir(localpath)
     repo = helpers.Repo(localpath)
     repo.init(bare=True)
     repo.new_remote(name='origin', url=url)
