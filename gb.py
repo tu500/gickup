@@ -6,6 +6,7 @@ import subprocess
 import urllib.request
 import json
 import re
+import shutil
 import sys
 from datetime import datetime
 
@@ -180,6 +181,42 @@ def run_add_github_user(args, settings):
         settings['github_users'].append(args.username)
         helpers.savesettings(args.configfile, settings)
 
+def run_removerepo(args, settings):
+    p = os.path.expanduser(args.backuppath)
+    if not os.path.isabs(p):
+        p = os.path.join(settings['localbasepath'], p)
+    p = os.path.abspath(p)
+    matching_repos = [(k,v) for k,v in settings['repos'].items() if v==p]
+
+    if len(matching_repos) == 0:
+        print('Repository {} not configured.'.format(p))
+    elif len(matching_repos) > 1:
+        print('Multiple repositories configured for {}.'.format(p))
+    else:
+        k,v = matching_repos[0]
+
+        del settings['repos'][k]
+        helpers.savesettings(args.configfile, settings)
+
+        if args.delete_files:
+            shutil.rmtree(p)
+
+def run_removeserver(args, settings):
+    v = args.serverurl.split(':', 1)
+
+    if not v in settings['servers']:
+        print('Server not configured.')
+    else:
+        settings['servers'].remove(v)
+        helpers.savesettings(args.configfile, settings)
+
+def run_remove_github_user(args, settings):
+    if not args.username in settings['github_users']:
+        print('Username not configured.')
+    else:
+        settings['github_users'].remove(args.username)
+        helpers.savesettings(args.configfile, settings)
+
 
 def main():
 
@@ -217,6 +254,19 @@ def main():
     parser_add_github_user = subparsers.add_parser('add_github_user', help='Add a github user to be checked for new repos')
     parser_add_github_user.add_argument('username')
     parser_add_github_user.set_defaults(func=run_add_github_user)
+
+    parser_removerepo = subparsers.add_parser('removerepo', help='Remove a configured repo')
+    parser_removerepo.add_argument('backuppath', help='Local path configured for the repo to be removed.')
+    parser_removerepo.add_argument('--delete-files', dest='delete_files', action='store_true', help='If given, also delete all files of this repo.')
+    parser_removerepo.set_defaults(func=run_removerepo)
+
+    parser_removeserver = subparsers.add_parser('removeserver', help='Remove a configured server')
+    parser_removeserver.add_argument('serverurl', help='Should be of the form `[user@]example.com:serverpath`')
+    parser_removeserver.set_defaults(func=run_removeserver)
+
+    parser_remove_github_user = subparsers.add_parser('remove_github_user', help='Remove a configured github user')
+    parser_remove_github_user.add_argument('username')
+    parser_remove_github_user.set_defaults(func=run_remove_github_user)
 
 
     args = parser.parse_args()
