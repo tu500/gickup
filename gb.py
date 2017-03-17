@@ -103,7 +103,7 @@ def run_updaterepolist(args, settings):
     print('New repos:')
     for k, v in newrepos.items():
         print('Repo {} backed up in {}'.format(k,v))
-    b = helpers.query_yes_no('Add and sync new repos?')
+    b = helpers.query_yes_no('Add and initialize new repos?')
 
     if b:
         print('Saving new repos.')
