@@ -160,8 +160,13 @@ def run_setconfig(args, settings):
     helpers.savesettings(args.configfile, settings)
 
 def run_addserver(args, settings):
-    settings['servers'].append(tuple(args.serverurl.split(':', 1)))
-    helpers.savesettings(args.configfile, settings)
+    v = tuple(args.serverurl.split(':', 1))
+
+    if v in settings['servers']:
+        print('Server already configured.')
+    else:
+        settings['servers'].append(v)
+        helpers.savesettings(args.configfile, settings)
 
 def run_add_github_user(args, settings):
     if args.username in settings['github_users']:
