@@ -123,8 +123,8 @@ def run_dobackup(args, settings):
 
 
 def addrepo(url, localpath):
-    p = os.path.abspath(localpath)
-    repo = helpers.Repo(p)
+    assert os.path.isabs(localpath)
+    repo = helpers.Repo(localpath)
     repo.init(bare=True)
     repo.new_remote(name='origin', url=url)
 
