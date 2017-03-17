@@ -162,7 +162,6 @@ def main():
     parser = argparse.ArgumentParser(
             description='GitBackup')
 
-    parser.add_argument('--home-dir', dest='homedir', default=helpers.DEFAULT_HOME_DIR, help='Home directory used for settings file and backups')
     parser.add_argument('--config-file', dest='configfile', help='Configuration file')
 
     subparsers = parser.add_subparsers(title='Commands')
@@ -197,16 +196,46 @@ def main():
 
 
     args = parser.parse_args()
+
     if not hasattr(args, 'func'):
         parser.print_help()
+
     else:
+
         # set default config file
         if args.configfile is None:
-            args.configfile = os.path.join(args.homedir, 'settings')
 
-        settings = helpers.loadsettings(args.configfile)
-        helpers.makelocaldir(settings['localbasepath'])
+            cf_candidates = helpers.get_config_file_candidates()
+            cf = helpers.first_file_existing(cf_candidates)
 
+            if cf is None:
+                cf = cf_candidates[0]
+                pass #TODO implicit, non existant
+
+            args.configfile = cf
+
+        else:
+
+            args.configfile = os.path.expanduser(args.configfile)
+
+            if not os.path.exists(cf):
+                pass #TODO explicitly given, non existant
+
+        # load settings / defaults
+        try:
+            settings = helpers.loadsettings(args.configfile)
+        except FileNotFoundError:
+            print('Found no settings file, using defaults.')
+            settings = helpers.DEFAULT_SETTINGS
+
+        # set default localbasepath
+        if settings['localbasepath'] is None:
+            settings['localbasepath'] = helpers.first_file_existing(
+                    helpers.get_backup_dir_candidates(),
+                    default_first=True
+                )
+
+        # run main func
         args.func(args, settings)
 
 if __name__ == '__main__':

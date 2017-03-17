@@ -3,10 +3,10 @@ import sys
 import os
 import json
 
-DEFAULT_HOME_DIR = os.path.join(os.path.expanduser('~'), '.gitbackup')
+#DEFAULT_HOME_DIR = os.path.join(os.path.expanduser('~'), '.gitbackup')
 DEFAULT_SETTINGS = {
     'repos': {},
-    'localbasepath': os.path.join(DEFAULT_HOME_DIR, 'backup'),
+    'localbasepath': None,
     'servers': [
         # ('user@server.example.com', 'serverbasepath'),
     ],
@@ -48,6 +48,8 @@ class Repo(object):
 
 
 def savesettings(settings_file_path, settings):
+    if not os.path.exists(settings_file_path):
+        print('Creating settings file `{}`.'.format(settings_file_path))
     if not os.path.exists(os.path.dirname(settings_file_path)):
         os.makedirs(os.path.dirname(settings_file_path))
     with open(settings_file_path, 'w') as f:
@@ -55,19 +57,39 @@ def savesettings(settings_file_path, settings):
 
 
 def loadsettings(settings_file_path):
-    try:
-        with open(settings_file_path, 'r') as f:
-            return json.load(f)
-    except:
-        print('Found no settings file, using defaults.')
-        savesettings(settings_file_path, DEFAULT_SETTINGS)
-        return DEFAULT_SETTINGS
+    with open(settings_file_path, 'r') as f:
+        return json.load(f)
 
 
 def makelocaldir(localbasepath):
     if not os.path.exists(localbasepath):
         print('Creating local backup directory')
         os.makedirs(localbasepath)
+
+
+def first_file_existing(filenames, default=None, default_first=False):
+    for f in filenames:
+        if os.path.exists(f):
+            return f
+    if default_first:
+        return filenames[0]
+    return default
+
+def get_backup_dir_candidates():
+    l = []
+    if 'XDG_DATA_HOME' in os.environ:
+        l.append(os.path.join(os.environ['XDG_DATA_HOME'], 'gitbackup'))
+    if 'XDG_CONFIG_HOME' in os.environ:
+        l.append(os.path.join(os.environ['XDG_CONFIG_HOME'], 'gitbackup'))
+    l.append(os.path.join('~', '.gitbackup', 'backup'))
+    return [os.path.expanduser(i) for i in l]
+
+def get_config_file_candidates():
+    l = []
+    if 'XDG_CONFIG_HOME' in os.environ:
+        l.append(os.path.join(os.environ['XDG_CONFIG_HOME'], 'gitbackup.conf'))
+    l.append(os.path.join('~', '.gitbackup', 'settings'))
+    return [os.path.expanduser(i) for i in l]
 
 
 def query_yes_no(question, default="yes"):
