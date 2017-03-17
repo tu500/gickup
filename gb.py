@@ -141,8 +141,11 @@ def init_repo(url, localpath):
 
 def run_addrepo(args, settings):
     bpath = args.backuppath
-    if bpath is None:
+    if bpath is not None:
+        bpath = os.path.expanduser(bpath)
+    else:
         bpath = generate_backup_path_from_url(args.repourl)
+
     if not os.path.isabs(bpath):
         bpath = os.path.join(settings['localbasepath'], bpath)
 
