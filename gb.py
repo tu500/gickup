@@ -152,9 +152,11 @@ def run_addserver(args, settings):
     helpers.savesettings(args.configfile, settings)
 
 def run_add_github_user(args, settings):
-    settings['github_users'].append(args.username)
-    settings['github_users'] = list(set(settings['github_users']))
-    helpers.savesettings(args.configfile, settings)
+    if args.username in settings['github_users']:
+        print('Username already configured.')
+    else:
+        settings['github_users'].append(args.username)
+        helpers.savesettings(args.configfile, settings)
 
 
 def main():
