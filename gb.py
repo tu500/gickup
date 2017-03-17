@@ -1,9 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import os
 import argparse
 import subprocess
-import urllib2
+import urllib.request
 import json
 import re
 import sys
@@ -17,7 +17,7 @@ def get_repo_list_ssh(serveraddress, serverbasepath, settings):
 
     newrepos = {}
 
-    dirlist = subprocess.check_output(['ssh', serveraddress, 'find', serverbasepath, '-type', 'd'])
+    dirlist = subprocess.check_output(['ssh', serveraddress, 'find', serverbasepath, '-type', 'd']).decode()
     for line in dirlist.splitlines():
         if line.endswith('/objects'):
             # got a repo, calculate url, localpath, check if exists
@@ -32,8 +32,8 @@ def get_repo_list_ssh(serveraddress, serverbasepath, settings):
 def get_repo_list_github(username, settings):
     newrepos = {}
 
-    response = urllib2.urlopen('https://api.github.com/users/{}/repos'.format(username))
-    data = response.read()
+    response = urllib.request.urlopen('https://api.github.com/users/{}/repos'.format(username))
+    data = response.read().decode()
     repos = json.loads(data)
     for repo in repos:
         localpath = os.path.join(settings['localbasepath'], 'github.com', username, repo['name'])

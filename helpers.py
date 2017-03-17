@@ -50,13 +50,13 @@ class Repo(object):
 def savesettings(settings_file_path, settings):
     if not os.path.exists(os.path.dirname(settings_file_path)):
         os.makedirs(os.path.dirname(settings_file_path))
-    with open(settings_file_path, 'wb') as f:
+    with open(settings_file_path, 'w') as f:
         json.dump(settings, f, sort_keys=True, indent=4, separators=(',', ': '))
 
 
 def loadsettings(settings_file_path):
     try:
-        with open(settings_file_path, 'rb') as f:
+        with open(settings_file_path, 'r') as f:
             return json.load(f)
     except:
         print('Found no settings file, using defaults.')
@@ -93,7 +93,7 @@ def query_yes_no(question, default="yes"):
 
     while True:
         sys.stdout.write(question + prompt)
-        choice = raw_input().lower()
+        choice = input().lower()
         if default is not None and choice == '':
             return valid[default]
         elif choice in valid:
