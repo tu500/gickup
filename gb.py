@@ -13,6 +13,8 @@ import helpers
 
 
 def get_repo_list_ssh(serveraddress, serverbasepath, settings):
+    # some heuristic, open for a better approach
+
     newrepos = {}
 
     dirlist = subprocess.check_output(['ssh', serveraddress, 'find', serverbasepath, '-type', 'd'])
