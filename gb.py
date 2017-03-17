@@ -42,36 +42,42 @@ def get_repo_list_github(username, settings):
     return newrepos
 
 
-def generate_backup_path_from_url(repourl):
-    match = re.match(r'^(\w+)://(.*)$', repourl)
+def url_split_type_target(url):
+    match = re.match(r'^(\w+)://(.*)$', url)
 
     if match:
         uri_type = match.group(1)
         target = match.group(2)
+
     else:
-        target = repourl
+        target = url
 
         # try to decude type
-        if os.path.exists(repourl):
+        if os.path.exists(url):
             uri_type = 'file'
-        elif ':' in repourl:
+        elif ':' in url:
             uri_type = 'ssh'
         else:
             uri_type = 'http'
 
+    return uri_type, target
+
+def generate_backup_path_from_url(repourl):
+    uri_type, target = url_split_type_target(repourl)
+
     if uri_type == 'file':
         if os.path.isabs(repourl):
             # make relative
-            return repourl[1:]
+            return target[1:]
         else:
-            return repourl
+            return target
 
     elif uri_type == 'ssh':
         # user@domain:path -> user@domain/path
-        return repourl.replace(':', os.path.sep, 1)
+        return target.replace(':', os.path.sep, 1)
 
     else:
-        return repourl
+        return target
 
 
 def run_updaterepolist(args, settings):
@@ -138,9 +144,15 @@ def run_addrepo(args, settings):
     if not os.path.isabs(bpath):
         bpath = os.path.join(settings['localbasepath'], bpath)
 
-    init_repo(args.repourl, bpath)
+    url = args.repourl
+    uri_type, target = url_split_type_target(url)
 
-    settings['repos'][args.repourl] = bpath
+    if uri_type == 'file':
+        url = os.path.abspath(os.path.expanduser(target))
+
+    init_repo(url, bpath)
+
+    settings['repos'][url] = bpath
     helpers.savesettings(args.configfile, settings)
 
 def run_setconfig(args, settings):
