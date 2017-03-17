@@ -5,6 +5,7 @@ import argparse
 import subprocess
 import urllib2
 import json
+import re
 import sys
 from datetime import datetime
 
@@ -37,6 +38,38 @@ def get_repo_list_github(username, settings):
         newrepos[repo['git_url']] = localpath
 
     return newrepos
+
+
+def generate_backup_path_from_url(repourl):
+    match = re.match(r'^(\w+)://(.*)$', repourl)
+
+    if match:
+        uri_type = match.group(1)
+        target = match.group(2)
+    else:
+        target = repourl
+
+        # try to decude type
+        if os.path.exists(repourl):
+            uri_type = 'file'
+        elif ':' in repourl:
+            uri_type = 'ssh'
+        else:
+            uri_type = 'http'
+
+    if uri_type == 'file':
+        if os.path.isabs(repourl):
+            # make relative
+            return repourl[1:]
+        else:
+            return repourl
+
+    elif uri_type == 'ssh':
+        # user@domain:path -> user@domain/path
+        return repourl.replace(':', os.path.sep, 1)
+
+    else:
+        return repourl
 
 
 def run_updaterepolist(args, settings):
@@ -99,7 +132,10 @@ def addrepo(url, localpath):
 def run_addrepo(args, settings):
     bpath = args.backuppath
     if bpath is None:
-        raise Exception('Not implemented. Please provide a local backup path') # :)
+        bpath = generate_backup_path_from_url(args.repourl)
+    if not os.path.isabs(bpath):
+        bpath = os.path.join(settings['localbasepath'], bpath)
+
     addrepo(args.repourl, bpath)
 
     settings['repos'][args.repourl] = bpath
@@ -141,7 +177,7 @@ def main():
 
     parser_addrepo = subparsers.add_parser('addrepo', help='Add a new repository to the backup list')
     parser_addrepo.add_argument('repourl', help='Url of the repository to be backed up')
-    parser_addrepo.add_argument('backuppath', nargs='?', help='Local path to where the repo should be backed up to. Default is <homedir>/backup/<servername>/<reponame>.')
+    parser_addrepo.add_argument('backuppath', nargs='?', help='Local path to where the repo should be backed up to. Default is <homedir>/backup/<servername>/<reponame>. Relative paths are interpreted relative to <localbasepath>, <homedir>/backup by default.')
     parser_addrepo.set_defaults(func=run_addrepo)
 
     parser_setconfig = subparsers.add_parser('setconfig', help='Set a config value')
