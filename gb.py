@@ -2,83 +2,11 @@
 
 import os
 import argparse
-import subprocess
-import urllib.request
-import json
-import re
 import shutil
-import sys
 from datetime import datetime
 
 import helpers
-
-
-def get_repo_list_ssh(serveraddress, serverbasepath, settings):
-    # some heuristic, open for a better approach
-
-    newrepos = {}
-
-    dirlist = subprocess.check_output(['ssh', serveraddress, 'find', serverbasepath, '-type', 'd']).decode()
-    for line in dirlist.splitlines():
-        if line.endswith('/objects'):
-            # got a repo, calculate url, localpath, check if exists
-            serverpath = line[:-len('/objects')]
-            url = '{}:{}'.format(serveraddress, serverpath)
-            localpath = os.path.join(settings['localbasepath'], serveraddress, serverpath[len(serverbasepath)+1:])
-            if not url in settings['repos']:
-                newrepos[url] = localpath
-
-    return newrepos
-
-def get_repo_list_github(username, settings):
-    newrepos = {}
-
-    response = urllib.request.urlopen('https://api.github.com/users/{}/repos'.format(username))
-    data = response.read().decode()
-    repos = json.loads(data)
-    for repo in repos:
-        localpath = os.path.join(settings['localbasepath'], 'github.com', username, repo['name'])
-        newrepos[repo['git_url']] = localpath
-
-    return newrepos
-
-
-def url_split_type_target(url):
-    match = re.match(r'^(\w+)://(.*)$', url)
-
-    if match:
-        uri_type = match.group(1)
-        target = match.group(2)
-
-    else:
-        target = url
-
-        # try to decude type
-        if os.path.exists(url):
-            uri_type = 'file'
-        elif ':' in url:
-            uri_type = 'ssh'
-        else:
-            uri_type = 'http'
-
-    return uri_type, target
-
-def generate_backup_path_from_url(repourl):
-    uri_type, target = url_split_type_target(repourl)
-
-    if uri_type == 'file':
-        if os.path.isabs(repourl):
-            # make relative
-            return target[1:]
-        else:
-            return target
-
-    elif uri_type == 'ssh':
-        # user@domain:path -> user@domain/path
-        return target.replace(':', os.path.sep, 1)
-
-    else:
-        return target
+import gblib
 
 
 def run_updaterepolist(args, settings):
@@ -87,17 +15,17 @@ def run_updaterepolist(args, settings):
 
         # for every server do a 'find' to search git repos
         for serveraddress, serverbasepath in settings['servers']:
-            newrepos.update(get_repo_list_ssh(serveraddress, serverbasepath, settings))
+            newrepos.update(gblib.get_repo_list_ssh(serveraddress, serverbasepath, settings))
 
         # for every github user query the api to find all the user's repos
         for username in settings['github_users']:
-            newrepos.update(get_repo_list_github(username, settings))
+            newrepos.update(gblib.get_repo_list_github(username, settings))
 
     elif args.type == 'ssh' or (args.type == 'auto' and ':' in args.target):
-        newrepos = get_repo_list_ssh(*args.target.split(':', 1), settings=settings)
+        newrepos = gblib.get_repo_list_ssh(*args.target.split(':', 1), settings=settings)
 
     else:
-        newrepos = get_repo_list_github(args.target, settings)
+        newrepos = gblib.get_repo_list_github(args.target, settings)
 
 
     # ask whether to really add found repos
@@ -109,20 +37,19 @@ def run_updaterepolist(args, settings):
     if b:
         print('Saving new repos.')
         for k, v in newrepos.items():
-            init_repo(k, v)
+            gblib.init_repo(k, v)
             settings['repos'][k] = v
         helpers.savesettings(args.configfile, settings)
     else:
         print('Not saving new repos.')
 
 
-
 def run_dobackup(args, settings):
     if args.localpath:
         paths = [os.path.abspath(os.path.expanduser(p)) for p in args.localpath]
-        repos = [helpers.Repo(p) for p in paths]
+        repos = [gblib.Repo(p) for p in paths]
     else:
-        repos = [helpers.Repo(v) for v in settings['repos'].values()]
+        repos = [gblib.Repo(v) for v in settings['repos'].values()]
 
     for repo in repos:
         print('Syncing {}'.format(repo.git_dir))
@@ -132,38 +59,32 @@ def run_dobackup(args, settings):
             ))
 
 
-def init_repo(url, localpath):
-    assert os.path.isabs(localpath)
-    assert not os.path.exists(localpath) or not os.listdir(localpath)
-    repo = helpers.Repo(localpath)
-    repo.init(bare=True)
-    repo.new_remote(name='origin', url=url)
-
-
 def run_addrepo(args, settings):
     bpath = args.backuppath
     if bpath is not None:
         bpath = os.path.expanduser(bpath)
     else:
-        bpath = generate_backup_path_from_url(args.repourl)
+        bpath = gblib.generate_backup_path_from_url(args.repourl)
 
     if not os.path.isabs(bpath):
         bpath = os.path.join(settings['localbasepath'], bpath)
 
     url = args.repourl
-    uri_type, target = url_split_type_target(url)
+    uri_type, target = gblib.url_split_type_target(url)
 
     if uri_type == 'file':
         url = os.path.abspath(os.path.expanduser(target))
 
-    init_repo(url, bpath)
+    gblib.init_repo(url, bpath)
 
     settings['repos'][url] = bpath
     helpers.savesettings(args.configfile, settings)
 
+
 def run_setconfig(args, settings):
     settings[args.name] = args.newvalue
     helpers.savesettings(args.configfile, settings)
+
 
 def run_addserver(args, settings):
     v = tuple(args.serverurl.split(':', 1))
@@ -174,12 +95,14 @@ def run_addserver(args, settings):
         settings['servers'].append(v)
         helpers.savesettings(args.configfile, settings)
 
+
 def run_add_github_user(args, settings):
     if args.username in settings['github_users']:
         print('Username already configured.')
     else:
         settings['github_users'].append(args.username)
         helpers.savesettings(args.configfile, settings)
+
 
 def run_removerepo(args, settings):
     p = os.path.expanduser(args.backuppath)
@@ -201,6 +124,7 @@ def run_removerepo(args, settings):
         if args.delete_files:
             shutil.rmtree(p)
 
+
 def run_removeserver(args, settings):
     v = args.serverurl.split(':', 1)
 
@@ -209,6 +133,7 @@ def run_removeserver(args, settings):
     else:
         settings['servers'].remove(v)
         helpers.savesettings(args.configfile, settings)
+
 
 def run_remove_github_user(args, settings):
     if not args.username in settings['github_users']:

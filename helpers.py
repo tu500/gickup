@@ -17,36 +17,6 @@ DEFAULT_SETTINGS = {
 }
 
 
-class Repo(object):
-    git_dir = None
-
-    def __init__(self, path):
-        self.git_dir = path
-
-    def fetch(self, refspec='', remote='origin'):
-        l = self._get_git_args()
-        l += ['fetch', remote, refspec]
-        subprocess.check_call(l)
-
-    def init(self, bare=True):
-        if not os.path.exists(self.git_dir):
-            os.makedirs(self.git_dir)
-
-        l = self._get_git_args()
-        l += ['init']
-        if bare:
-            l += ['--bare']
-        subprocess.check_call(l)
-
-    def new_remote(self, name, url):
-        l = self._get_git_args()
-        l += ['remote', 'add', name, url]
-        subprocess.check_call(l)
-
-    def _get_git_args(self):
-        return ['git', '--git-dir', self.git_dir]
-
-
 def savesettings(settings_file_path, settings):
     if not os.path.exists(settings_file_path):
         print('Creating settings file `{}`.'.format(settings_file_path))
