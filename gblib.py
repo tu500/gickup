@@ -47,8 +47,7 @@ def get_repo_list_ssh(serveraddress, serverbasepath, settings):
             serverpath = line[:-len('/objects')]
             url = '{}:{}'.format(serveraddress, serverpath)
             localpath = os.path.join(settings['localbasepath'], serveraddress, serverpath[len(serverbasepath)+1:])
-            if not url in settings['repos']:
-                newrepos[url] = localpath
+            newrepos[url] = localpath
 
     return newrepos
 

@@ -28,6 +28,15 @@ def run_updaterepolist(args, settings):
         newrepos = gblib.get_repo_list_github(args.target, settings)
 
 
+    # only consider unknown repos
+    newrepos = {url:path for url, path in newrepos.items() if not url in settings['repos']}
+
+
+    if not newrepos:
+        print('No unknown repos found.')
+        return
+
+
     # ask whether to really add found repos
     print('New repos:')
     for k, v in newrepos.items():
