@@ -118,9 +118,9 @@ def run_updaterepolist(args, settings):
 
 
 def run_dobackup(args, settings):
-    if args.localpath is not None:
-        p = os.path.abspath(os.path.expanduser(args.localpath))
-        repos = [helpers.Repo(p)]
+    if args.localpath:
+        paths = [os.path.abspath(os.path.expanduser(p)) for p in args.localpath]
+        repos = [helpers.Repo(p) for p in paths]
     else:
         repos = [helpers.Repo(v) for v in settings['repos'].values()]
 
@@ -233,7 +233,7 @@ def main():
     parser_updaterepolist.set_defaults(func=run_updaterepolist)
 
     parser_dobackup = subparsers.add_parser('dobackup', help='Do a backup of a repository. If no explicit repo is provided, all configured repos will be backed up.')
-    parser_dobackup.add_argument('localpath', nargs='?', help='Local path of the repository that should be backed up. Needs an initialized git repo at that location. Backs up the origin remote.')
+    parser_dobackup.add_argument('localpath', nargs='*', help='Local path of the repositories that should be backed up. Needs an initialized git repo at that location. Backs up the origin remote.')
     parser_dobackup.set_defaults(func=run_dobackup)
 
 
