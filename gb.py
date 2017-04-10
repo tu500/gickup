@@ -41,7 +41,11 @@ def run_updaterepolist(args, settings):
     print('New repos:')
     for k, v in newrepos.items():
         print('Repo {} backed up in {}'.format(k,v))
-    b = helpers.query_yes_no('Add and initialize new repos?')
+
+    if args.assume_yes:
+        b = True
+    else:
+        b = helpers.query_yes_no('Add and initialize new repos?')
 
     if b:
         print('Saving new repos.')
@@ -158,6 +162,7 @@ def main():
             description='GitBackup')
 
     parser.add_argument('--config-file', dest='configfile', help='Configuration file')
+    parser.add_argument('-y', '--assume-yes', action='store_true', help='Configuration file')
 
     subparsers = parser.add_subparsers(title='Commands')
 
