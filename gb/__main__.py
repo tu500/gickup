@@ -5,8 +5,8 @@ import argparse
 import shutil
 from datetime import datetime
 
-import helpers
-import gblib
+from . import helpers
+from . import gblib
 
 
 def run_updaterepolist(args, settings):
