@@ -1,26 +1,49 @@
 GitBackup Python Script
 =======================
 
-A rudimentary backup script for multiple git repos. It does its job...
+This is a script for backing up multiple git repos, keeping local timestamped
+copies of all available branches.
 
 Features
 --------
 
-* Setup
-** Scan servers for git repos to auto-add them (using `ssh find`)
-** Scan github user for repos to auto-add them
-* Save all remote branches into local branches `backup/<date>/<name>`
+* Save state of all remote branches into local branches by current date/time
+* Keep track of backed up repositories, automatic batch backup of all known repos
+* Scan servers for git repos to auto-add them (using `ssh find`)
+* Scan github user for repos to auto-add them
 
 How to use
 ----------
 
-* Run `gb.py` once
-* Modify settings in `~/.gitbackup/settings`
-* `gb.py updaterepolist` will scan the configured servers for git repos
-* `gb.py addrepo` will add a specific repo to be backed up
-* `gb.py dobackup` will start a backup of a specific or all repos
-* `gb.py addserver` will add an ssh-server to the configured list
-* `gb.py add_github_user` will add a github username to the configured list
+```sh
+# Add new repo to backup list manually
+gb.py addrepo ssh://user@example.com
+gb.py addrepo https://github.com/user/example.git
+gb.py addrepo /some/local/path
+
+# Optionally specify a target directory
+gb.py addrepo ssh://user@example.com /target/dir
+
+# Add github users / ssh server to watch for new repos
+gb.py add_github_user user
+gb.py addserver user@example.com:remote/path
+
+# Then scan for unknown repos
+gb.py updaterepolist
+...
+
+# Or scan without configuring
+gb.py updaterepolist --type github user
+...
+gb.py updaterepolist user@example.com:remote/path
+...
+
+# Now do a backup of all known repos
+gb.py dobackup
+
+# ... or a specific one
+gb.py dobackup /local/backup/path
+```
 
 Settings
 --------
@@ -33,3 +56,9 @@ Settings
   scanned for new repos by updaterepolist.
 * `github_users` a list of github usernames which will be scanned for new repos
   by updaterepolist.
+
+See also
+--------
+
+* https://github.com/sciunto-org/gitbackup
+* https://github-backup.branchable.com/
