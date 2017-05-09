@@ -63,23 +63,27 @@ def get_config_file_candidates():
 
 
 def query_yes_no(question, default="yes"):
-    """Ask a yes/no question via raw_input() and return their answer.
+    """
+    Ask a yes/no question via raw_input() and return their answer.
 
     "question" is a string that is presented to the user.
     "default" is the presumed answer if the user just hits <Enter>.
-        It must be "yes" (the default), "no" or None (meaning
-        an answer is required of the user).
+        May be any valid answer or None (meaning an explicit answer is required
+        of the user).
 
-    The "answer" return value is one of "yes" or "no".
+    Return True or False depending on the user's choice.
     """
-    valid = {"yes": True,   "y": True,  "ye": True,
-             "no": False,     "n": False}
+    valid = {
+            "yes": True,
+            "y":   True,
+            "no":  False,
+            "n":   False
+        }
     if default is None:
         prompt = " [y/n] "
-    elif default == "yes":
-        prompt = " [Y/n] "
-    elif default == "no":
-        prompt = " [y/N] "
+    elif default in valid:
+        b = valid[default]
+        prompt = " [Y/n] " if b else " [y/N] "
     else:
         raise ValueError("invalid default answer: '%s'" % default)
 
