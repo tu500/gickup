@@ -3,7 +3,7 @@ import sys
 import os
 import json
 
-#DEFAULT_HOME_DIR = os.path.join(os.path.expanduser('~'), '.gitbackup')
+#DEFAULT_HOME_DIR = os.path.join(os.path.expanduser('~'), '.gickup')
 DEFAULT_SETTINGS = {
     'repos': {},
     'localbasepath': None,
@@ -48,17 +48,17 @@ def first_file_existing(filenames, default=None, default_first=False):
 def get_backup_dir_candidates():
     l = []
     if 'XDG_DATA_HOME' in os.environ:
-        l.append(os.path.join(os.environ['XDG_DATA_HOME'], 'gitbackup'))
+        l.append(os.path.join(os.environ['XDG_DATA_HOME'], 'gickup'))
     if 'XDG_CONFIG_HOME' in os.environ:
-        l.append(os.path.join(os.environ['XDG_CONFIG_HOME'], 'gitbackup'))
-    l.append(os.path.join('~', '.gitbackup', 'backup'))
+        l.append(os.path.join(os.environ['XDG_CONFIG_HOME'], 'gickup'))
+    l.append(os.path.join('~', '.gickup', 'backup'))
     return [os.path.expanduser(i) for i in l]
 
 def get_config_file_candidates():
     l = []
     if 'XDG_CONFIG_HOME' in os.environ:
-        l.append(os.path.join(os.environ['XDG_CONFIG_HOME'], 'gitbackup.conf'))
-    l.append(os.path.join('~', '.gitbackup', 'settings'))
+        l.append(os.path.join(os.environ['XDG_CONFIG_HOME'], 'gickup.conf'))
+    l.append(os.path.join('~', '.gickup', 'settings'))
     return [os.path.expanduser(i) for i in l]
 
 

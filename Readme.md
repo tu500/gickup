@@ -1,5 +1,5 @@
-GitBackup Python Script
-=======================
+Gickup
+======
 
 This is a script for backing up multiple git repos, keeping local timestamped
 copies of all available branches.
@@ -17,32 +17,32 @@ How to use
 
 ```sh
 # Add new repo to backup list manually
-gb.py addrepo ssh://user@example.com
-gb.py addrepo https://github.com/user/example.git
-gb.py addrepo /some/local/path
+gickup addrepo ssh://user@example.com
+gickup addrepo https://github.com/user/example.git
+gickup addrepo /some/local/path
 
 # Optionally specify a target directory
-gb.py addrepo ssh://user@example.com /target/dir
+gickup addrepo ssh://user@example.com /target/dir
 
 # Add github users / ssh server to watch for new repos
-gb.py add_github_user user
-gb.py addserver user@example.com:remote/path
+gickup add_github_user user
+gickup addserver user@example.com:remote/path
 
 # Then scan for unknown repos
-gb.py updaterepolist
+gickup updaterepolist
 ...
 
 # Or scan without configuring
-gb.py updaterepolist --type github user
+gickup updaterepolist --type github user
 ...
-gb.py updaterepolist user@example.com:remote/path
+gickup updaterepolist user@example.com:remote/path
 ...
 
 # Now do a backup of all known repos
-gb.py dobackup
+gickup dobackup
 
 # ... or a specific one
-gb.py dobackup /local/backup/path
+gickup dobackup /local/backup/path
 ```
 
 Settings
@@ -56,6 +56,14 @@ Settings
   scanned for new repos by updaterepolist.
 * `github_users` a list of github usernames which will be scanned for new repos
   by updaterepolist.
+
+Why "Gickup"?
+-------------
+
+Well, every project needs a name and https://github.com/sciunto-org/gitbackup
+beat me to the obvious one.
+
+On this occasion: Thank you to the one who gave me the suggestion.
 
 See also
 --------
