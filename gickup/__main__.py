@@ -7,26 +7,25 @@ from datetime import datetime
 
 from . import helpers
 from . import gblib
+from . import repoindex
 
 
 def run_updaterepolist(args, settings):
+
     if args.target is None:
-        newrepos = {}
+        indices = [repoindex.RepoIndex.CreateFromType(*i) for i in settings['repo_indices']]
 
-        # for every server do a 'find' to search git repos
-        for serveraddress, serverbasepath in settings['servers']:
-            newrepos.update(gblib.get_repo_list_ssh(serveraddress, serverbasepath, settings))
-
-        # for every github user query the api to find all the user's repos
-        for username in settings['github_users']:
-            newrepos.update(gblib.get_repo_list_github(username, settings))
-
-    elif args.type == 'ssh' or (args.type == 'auto' and ':' in args.target):
-        newrepos = gblib.get_repo_list_ssh(*args.target.split(':', 1), settings=settings)
+    elif args.type == 'auto':
+        indices = [repoindex.RepoIndex.CreateFromUrl(args.target)]
 
     else:
-        newrepos = gblib.get_repo_list_github(args.target, settings)
+        indices = [repoindex.RepoIndex.CreateFromType(args.type, args.target)]
 
+    newrepos = {}
+
+    for ri in indices:
+        print('Checking {}://{}'.format(ri.uri_type, ri.url))
+        newrepos.update(ri.get_list(settings))
 
     # only consider unknown repos
     newrepos = {url:path for url, path in newrepos.items() if not url in settings['repos']}
@@ -99,21 +98,19 @@ def run_setconfig(args, settings):
     helpers.savesettings(args.configfile, settings)
 
 
-def run_addserver(args, settings):
-    v = tuple(args.serverurl.split(':', 1))
+def run_addindex(args, settings):
 
-    if v in settings['servers']:
-        print('Server already configured.')
+    if args.type == 'auto':
+        ri = repoindex.RepoIndex.CreateFromUrl(args.target)
     else:
-        settings['servers'].append(v)
-        helpers.savesettings(args.configfile, settings)
+        ri = repoindex.RepoIndex.CreateFromType(args.type, args.target)
 
+    t = ri.get_settings_tuple()
 
-def run_add_github_user(args, settings):
-    if args.username in settings['github_users']:
-        print('Username already configured.')
+    if list(t) in settings['repo_indices']:
+        print('Repository index already configured.')
     else:
-        settings['github_users'].append(args.username)
+        settings['repo_indices'].append(t)
         helpers.savesettings(args.configfile, settings)
 
 
@@ -138,21 +135,19 @@ def run_removerepo(args, settings):
             shutil.rmtree(p)
 
 
-def run_removeserver(args, settings):
-    v = args.serverurl.split(':', 1)
+def run_removeindex(args, settings):
 
-    if not v in settings['servers']:
-        print('Server not configured.')
+    if args.type == 'auto':
+        ri = repoindex.RepoIndex.CreateFromUrl(args.target)
     else:
-        settings['servers'].remove(v)
-        helpers.savesettings(args.configfile, settings)
+        ri = repoindex.RepoIndex.CreateFromType(args.type, args.target)
 
+    t = ri.get_settings_tuple()
 
-def run_remove_github_user(args, settings):
-    if not args.username in settings['github_users']:
-        print('Username not configured.')
+    if not list(t) in settings['repo_indices']:
+        print('Repository index not configured.')
     else:
-        settings['github_users'].remove(args.username)
+        settings['repo_indices'].remove(list(t))
         helpers.savesettings(args.configfile, settings)
 
 
@@ -186,26 +181,20 @@ def main():
     parser_setconfig.add_argument('newvalue')
     parser_setconfig.set_defaults(func=run_setconfig)
 
-    parser_addserver = subparsers.add_parser('addserver', help='Add a server to be checked for new repos')
-    parser_addserver.add_argument('serverurl', help='Should be of the form `[user@]example.com:serverpath`')
-    parser_addserver.set_defaults(func=run_addserver)
-
-    parser_add_github_user = subparsers.add_parser('add_github_user', help='Add a github user to be checked for new repos')
-    parser_add_github_user.add_argument('username')
-    parser_add_github_user.set_defaults(func=run_add_github_user)
+    parser_addindex = subparsers.add_parser('addindex', help='Add a repository index to be checked for new repos')
+    parser_addindex.add_argument('target')
+    parser_addindex.add_argument('--type', choices=['ssh','github'], default='auto', help='Force how the target value will be interpreted')
+    parser_addindex.set_defaults(func=run_addindex)
 
     parser_removerepo = subparsers.add_parser('removerepo', help='Remove a configured repo')
     parser_removerepo.add_argument('backuppath', help='Local path configured for the repo to be removed.')
     parser_removerepo.add_argument('--delete-files', dest='delete_files', action='store_true', help='If given, also delete all files of this repo.')
     parser_removerepo.set_defaults(func=run_removerepo)
 
-    parser_removeserver = subparsers.add_parser('removeserver', help='Remove a configured server')
-    parser_removeserver.add_argument('serverurl', help='Should be of the form `[user@]example.com:serverpath`')
-    parser_removeserver.set_defaults(func=run_removeserver)
-
-    parser_remove_github_user = subparsers.add_parser('remove_github_user', help='Remove a configured github user')
-    parser_remove_github_user.add_argument('username')
-    parser_remove_github_user.set_defaults(func=run_remove_github_user)
+    parser_removeindex = subparsers.add_parser('removeindex', help='Remove a configured repository index')
+    parser_removeindex.add_argument('target', help='The same format as for `addindex`')
+    parser_removeindex.add_argument('--type', choices=['ssh','github'], default='auto', help='Force how the target value will be interpreted')
+    parser_removeindex.set_defaults(func=run_removeindex)
 
 
     args = parser.parse_args()

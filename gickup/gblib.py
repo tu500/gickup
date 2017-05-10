@@ -1,7 +1,5 @@
 import os
 import subprocess
-import urllib.request
-import json
 import re
 
 
@@ -33,36 +31,6 @@ class Repo(object):
 
     def _get_git_args(self):
         return ['git', '--git-dir', self.git_dir]
-
-
-def get_repo_list_ssh(serveraddress, serverbasepath, settings):
-    # some heuristic, open for a better approach
-
-    newrepos = {}
-
-    dirlist = subprocess.check_output(['ssh', serveraddress, 'find', serverbasepath, '-type', 'd']).decode()
-    for line in dirlist.splitlines():
-        if line.endswith('/objects'):
-            # got a repo, calculate url, localpath, check if exists
-            serverpath = line[:-len('/objects')]
-            url = '{}:{}'.format(serveraddress, serverpath)
-            localpath = os.path.join(settings['localbasepath'], serveraddress, serverpath[len(serverbasepath)+1:])
-            newrepos[url] = localpath
-
-    return newrepos
-
-
-def get_repo_list_github(username, settings):
-    newrepos = {}
-
-    response = urllib.request.urlopen('https://api.github.com/users/{}/repos'.format(username))
-    data = response.read().decode()
-    repos = json.loads(data)
-    for repo in repos:
-        localpath = os.path.join(settings['localbasepath'], 'github.com', username, repo['name'])
-        newrepos[repo['git_url']] = localpath
-
-    return newrepos
 
 
 def url_split_type_target(url):

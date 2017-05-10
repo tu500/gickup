@@ -8,11 +8,8 @@ DEFAULT_SETTINGS = {
     'settings_version': 1,
     'repos': {},
     'localbasepath': None,
-    'servers': [
-        # ('user@server.example.com', 'serverbasepath'),
-    ],
-    'github_users': [
-        # 'username',
+    'repo_indices': [
+        # ('uri_type', 'target'),
     ],
     'dateformat': '%Y-%m-%d/%H-%M-%S',
 }
