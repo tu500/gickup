@@ -65,6 +65,14 @@ beat me to the obvious one.
 
 On this occasion: Thank you to the one who gave me the suggestion.
 
+License
+-------
+
+Gickup is licensed under the AGPLv3 or later, see `LICENSE.txt`.
+
+Apart from that I'm open to discussion. If you need a different license feel
+free to contact me.
+
 See also
 --------
 
