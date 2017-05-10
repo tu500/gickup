@@ -5,6 +5,7 @@ import json
 
 #DEFAULT_HOME_DIR = os.path.join(os.path.expanduser('~'), '.gickup')
 DEFAULT_SETTINGS = {
+    'settings_version': 1,
     'repos': {},
     'localbasepath': None,
     'servers': [
